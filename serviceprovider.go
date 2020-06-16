@@ -1,13 +1,13 @@
 // This file defines ServiceProvider (i.e., a DICOM server).
 
-package netdicom
+package dicompot
 
 import (
 	"net"
 
 	dicom "github.com/grailbio/go-dicom"
 	"github.com/grailbio/go-dicom/dicomio"
-	"github.com/grailbio/go-netdicom/dimse"
+	"github.com/nsmfoo/dicompot/dimse"
 	"github.com/sirupsen/logrus"
 )
 
@@ -305,7 +305,7 @@ type ServiceProviderParams struct {
 	CStore CStoreCallback
 }
 
-// DefaultMaxPDUSize is the the PDU size advertized by go-netdicom.
+// DefaultMaxPDUSize is the the PDU size advertized.
 const DefaultMaxPDUSize = 4 << 20
 
 type CStoreCallback func(

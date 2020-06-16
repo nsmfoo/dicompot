@@ -1,4 +1,4 @@
-module github.com/grailbio/go-netdicom
+module github.com/nsmfoo/dicompot
 
 go 1.14
 
@@ -12,8 +12,8 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-replace github.com/grailbio/go-dicom => ../go-dicom
+replace github.com/grailbio/go-dicom => ../dicom
 
-replace github.com/grailbio/go-netdicom => ../go-netdicom
+replace github.com/nsmfoo/dicompot => ../dicompot
 
 replace github.com/golang/lint => ../../golang/lint

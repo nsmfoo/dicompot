@@ -1,10 +1,10 @@
-package netdicom
+package dicompot
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/grailbio/go-netdicom/dimse"
+	"github.com/nsmfoo/dicompot/dimse"
 )
 
 // serviceDispatcher multiplexes statemachine upcall events to DIMSE commands.

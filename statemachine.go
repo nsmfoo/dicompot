@@ -1,4 +1,4 @@
-package netdicom
+package dicompot
 
 // Implements the network statemachine, as defined in P3.8 9.2.3.
 // http://dicom.nema.org/medical/dicom/current/output/pdf/part08.pdf
@@ -11,8 +11,8 @@ import (
 
 	"github.com/grailbio/go-dicom/dicomio"
 	"github.com/grailbio/go-dicom/dicomuid"
-	"github.com/grailbio/go-netdicom/dimse"
-	"github.com/grailbio/go-netdicom/pdu"
+	"github.com/nsmfoo/dicompot/dimse"
+	"github.com/nsmfoo/dicompot/pdu"
 )
 
 type stateType int

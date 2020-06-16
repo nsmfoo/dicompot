@@ -1,4 +1,4 @@
-package netdicom
+package dicompot
 
 // This file implements the ServiceUser (i.e., a DICOM DIMSE client) class.
 
@@ -14,7 +14,7 @@ import (
 	"github.com/grailbio/go-dicom/dicomio"
 	"github.com/grailbio/go-dicom/dicomtag"
 	"github.com/grailbio/go-dicom/dicomuid"
-	"github.com/grailbio/go-netdicom/dimse"
+	"github.com/nsmfoo/dicompot/dimse"
 )
 
 type serviceUserStatus int

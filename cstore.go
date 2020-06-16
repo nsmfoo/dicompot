@@ -1,4 +1,4 @@
-package netdicom
+package dicompot
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/grailbio/go-dicom"
 	"github.com/grailbio/go-dicom/dicomio"
 	"github.com/grailbio/go-dicom/dicomtag"
-	"github.com/grailbio/go-netdicom/dimse"
+	"github.com/nsmfoo/dicompot/dimse"
 )
 
 // Helper function used by C-{STORE,GET,MOVE} to send a dataset using C-STORE

@@ -1,4 +1,4 @@
-package netdicom
+package dicompot
 
 import (
 	"fmt"

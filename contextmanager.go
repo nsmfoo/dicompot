@@ -1,11 +1,11 @@
-package netdicom
+package dicompot
 
 import (
 	"fmt"
 
 	"github.com/grailbio/go-dicom"
 	"github.com/grailbio/go-dicom/dicomuid"
-	"github.com/grailbio/go-netdicom/pdu"
+	"github.com/nsmfoo/dicompot/pdu"
 	"github.com/sirupsen/logrus"
 )
 

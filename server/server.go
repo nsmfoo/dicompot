@@ -11,9 +11,9 @@ import (
 	"sync"
 
 	"github.com/grailbio/go-dicom"
-	"github.com/grailbio/go-netdicom"
-	"github.com/grailbio/go-netdicom/dimse"
 	"github.com/mattn/go-colorable"
+	"github.com/nsmfoo/dicompot"
+	"github.com/nsmfoo/dicompot/dimse"
 	"github.com/sirupsen/logrus"
 	"github.com/snowzach/rotatefilehook"
 )
@@ -122,7 +122,7 @@ func (ss *server) onCFind(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
-	ch chan netdicom.CFindResult) {
+	ch chan dicompot.CFindResult) {
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-FIND",
 	}).Info("Recived")
@@ -131,10 +131,10 @@ func (ss *server) onCFind(
 		"Matches": len(matches),
 	}).Warn("C-FIND Search result")
 	if err != nil {
-		ch <- netdicom.CFindResult{Err: err}
+		ch <- dicompot.CFindResult{Err: err}
 	} else {
 		for _, match := range matches {
-			ch <- netdicom.CFindResult{Elements: match.elems}
+			ch <- dicompot.CFindResult{Elements: match.elems}
 		}
 	}
 	close(ch)
@@ -144,17 +144,17 @@ func (ss *server) onCMoveOrCGet(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
-	ch chan netdicom.CMoveResult) {
+	ch chan dicompot.CMoveResult) {
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-MOVE",
 	}).Info("Recived")
 	matches, err := ss.findMatchingFiles(filters)
 	if err != nil {
-		ch <- netdicom.CMoveResult{Err: err}
+		ch <- dicompot.CMoveResult{Err: err}
 	} else {
 		for i, match := range matches {
 			ds, err := dicom.ReadDataSetFromFile(match.path, dicom.ReadOptions{})
-			resp := netdicom.CMoveResult{
+			resp := dicompot.CMoveResult{
 				Remaining: len(matches) - i - 1,
 				Path:      match.path,
 			}
@@ -259,25 +259,25 @@ func main() {
 	}
 	log.Printf("-| Listening on %s", hostAddress)
 
-	params := netdicom.ServiceProviderParams{
+	params := dicompot.ServiceProviderParams{
 		AETitle: *aeFlag,
-		CEcho: func(connState netdicom.ConnectionState) dimse.Status {
+		CEcho: func(connState dicompot.ConnectionState) dimse.Status {
 			logrus.WithFields(logrus.Fields{
 				"Command": "C-ECHO",
 			}).Info("Recived")
 
 			return dimse.Success
 		},
-		CFind: func(connState netdicom.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan netdicom.CFindResult) {
+		CFind: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
+			filter []*dicom.Element, ch chan dicompot.CFindResult) {
 			ss.onCFind(transferSyntaxUID, sopClassUID, filter, ch)
 		},
-		CMove: func(connState netdicom.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan netdicom.CMoveResult) {
+		CMove: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
+			filter []*dicom.Element, ch chan dicompot.CMoveResult) {
 			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, ch)
 		},
-		CGet: func(connState netdicom.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan netdicom.CMoveResult) {
+		CGet: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
+			filter []*dicom.Element, ch chan dicompot.CMoveResult) {
 			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, ch)
 		},
 	}
@@ -285,7 +285,7 @@ func main() {
 	log.Printf("-| Local AE Title: %s", params.AETitle)
 	log.Print("-| Attacker log: ")
 
-	sp, err := netdicom.NewServiceProvider(params, hostAddress)
+	sp, err := dicompot.NewServiceProvider(params, hostAddress)
 	if err != nil {
 		panic(err)
 	}

@@ -12,7 +12,7 @@ import (
 	dicom "github.com/grailbio/go-dicom"
 	"github.com/grailbio/go-dicom/dicomio"
 	"github.com/grailbio/go-dicom/dicomtag"
-	"github.com/grailbio/go-netdicom/pdu"
+	"github.com/nsmfoo/dicompot/pdu"
 )
 
 // Message defines the common interface for all DIMSE message types.
