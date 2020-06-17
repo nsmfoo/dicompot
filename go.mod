@@ -12,8 +12,6 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-replace github.com/grailbio/go-dicom => ../dicom
-
 replace github.com/nsmfoo/dicompot => ../dicompot
 
 replace github.com/golang/lint => ../../golang/lint
