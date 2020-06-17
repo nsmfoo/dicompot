@@ -21,10 +21,11 @@ This project is built up on the great work done by GRAIL (https://github.com/gra
 
 # Run
 
-- cd HOME/go/bin
+- cd $HOME/go/bin
 - ./server 
-- ./server -help for the different options that is avalible
+- ./server -help, for the different options that is avalible
 - The server will log to the console and also to a file called dicompot.log (JSON)
+- Works well with screen, if you like to run it in the background
 
 # Test
 
