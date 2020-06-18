@@ -19,6 +19,19 @@ This project is built up on the great work done by GRAIL (https://github.com/gra
 - go get -d ./...
 - go install -a -x github.com/nsmfoo/dicompot/server/
 
+(Alpine)
+```
+apk -U add go build-base g++ git
+mkdir -p /opt/go
+export GOPATH=/opt/go/
+cd /opt/go/
+git clone https://github.com/nsmfoo/dicompot.git
+cd dicompot
+go mod download
+go install -a -x github.com/nsmfoo/dicompot/server
+```
+Binary (`server`) located in `/opt/go/bin`.
+
 # Run
 
 - cd $HOME/go/bin
