@@ -44,7 +44,7 @@ func handleCStore(
 	cs.sendMessage(resp, nil)
 	logrus.WithFields(logrus.Fields{
 		"Type": "We don't like that",
-	}).Error("C-STORE recived")
+	}).Error("C-STORE received")
 }
 
 func handleCFind(
@@ -251,7 +251,7 @@ func handleCGet(
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-GET",
 		"Files":   numSuccesses,
-	}).Info("Recived")
+	}).Info("Received")
 
 	// Drain the responses in case of errors
 	for range responseCh {
