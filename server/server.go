@@ -125,7 +125,7 @@ func (ss *server) onCFind(
 	ch chan dicompot.CFindResult) {
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-FIND",
-	}).Info("Recived")
+	}).Info("Received")
 	matches, err := ss.findMatchingFiles(filters)
 	logrus.WithFields(logrus.Fields{
 		"Matches": len(matches),
@@ -147,7 +147,7 @@ func (ss *server) onCMoveOrCGet(
 	ch chan dicompot.CMoveResult) {
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-MOVE",
-	}).Info("Recived")
+	}).Info("Received")
 	matches, err := ss.findMatchingFiles(filters)
 	if err != nil {
 		ch <- dicompot.CMoveResult{Err: err}
@@ -264,7 +264,7 @@ func main() {
 		CEcho: func(connState dicompot.ConnectionState) dimse.Status {
 			logrus.WithFields(logrus.Fields{
 				"Command": "C-ECHO",
-			}).Info("Recived")
+			}).Info("Received")
 
 			return dimse.Success
 		},
