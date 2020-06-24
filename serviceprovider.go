@@ -449,8 +449,9 @@ func (sp *ServiceProvider) Run() {
 		if err != nil {
 			continue
 		}
+		RemoteAddress := conn.RemoteAddr()
 		logrus.WithFields(logrus.Fields{
-			"Address": conn.RemoteAddr(),
+			"Address": RemoteAddress.String(),
 		}).Warn("Connection from")
 		go func() { RunProviderForConn(conn, sp.params) }()
 	}
