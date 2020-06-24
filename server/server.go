@@ -23,14 +23,13 @@ var (
 	ipFlag   = flag.String("ip", "127.0.0.1", "IP address to listen to")
 	aeFlag   = flag.String("ae", "radiant", "AE title of this server")
 	dirFlag  = flag.String("dir", ".", "Picture directory")
+	logFlag  = flag.String("log", "dicompot.log", "logfile")
 )
 
-const logFile = "dicompot.log"
-
-func init() {
+func logInit() {
 	var logLevel = logrus.InfoLevel
 	rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
-		Filename:   logFile,
+		Filename:   *logFlag,
 		MaxSize:    10,
 		MaxBackups: 3,
 		MaxAge:     7,
@@ -235,21 +234,21 @@ func canonicalizeHostIp(IpAdr string) string {
 }
 
 func main() {
-
 	flag.Parse()
+	logInit()
 	port := canonicalizeHostPort(*portFlag)
 	ip := canonicalizeHostIp(*ipFlag)
 	hostAddress := ip + port
 	datasets, err := listDicomFiles(*dirFlag)
 
 	log.Printf(`
-	██████╗ ██╗ ██████╗ ██████╗ ███╗   ███╗██████╗  ██████╗ ████████╗
-	██╔══██╗██║██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗╚══██╔══╝
-	██║  ██║██║██║     ██║   ██║██╔████╔██║██████╔╝██║   ██║   ██║   
-	██║  ██║██║██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║   ██║   ██║   
-	██████╔╝██║╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ╚██████╔╝   ██║   
-	╚═════╝ ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝      ╚═════╝    ╚═╝   v0.1 
-	@nsmfoo - Mikael Keri
+		██████╗ ██╗ ██████╗ ██████╗ ███╗   ███╗██████╗  ██████╗ ████████╗
+		██╔══██╗██║██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗╚══██╔══╝
+		██║  ██║██║██║     ██║   ██║██╔████╔██║██████╔╝██║   ██║   ██║   
+		██║  ██║██║██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║   ██║   ██║   
+		██████╔╝██║╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ╚██████╔╝   ██║   
+		╚═════╝ ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝      ╚═════╝    ╚═╝  
+		@nsmfoo - Mikael Keri
 																	 
 	`)
 	log.Printf("-| Loaded %d images", len(datasets))
@@ -257,7 +256,7 @@ func main() {
 		mu:       &sync.Mutex{},
 		datasets: datasets,
 	}
-	log.Printf("-| Listening on %s", hostAddress)
+	log.Printf("-| Listening on: %s", hostAddress)
 
 	params := dicompot.ServiceProviderParams{
 		AETitle: *aeFlag,
@@ -283,7 +282,7 @@ func main() {
 	}
 
 	log.Printf("-| Local AE Title: %s", params.AETitle)
-	log.Print("-| Attacker log: ")
+	log.Printf("-| Attacker log: %s", *logFlag)
 
 	sp, err := dicompot.NewServiceProvider(params, hostAddress)
 	if err != nil {
