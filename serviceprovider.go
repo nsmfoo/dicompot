@@ -4,6 +4,7 @@ package dicompot
 
 import (
 	"net"
+	"strings"
 
 	dicom "github.com/grailbio/go-dicom"
 	"github.com/grailbio/go-dicom/dicomio"
@@ -450,8 +451,10 @@ func (sp *ServiceProvider) Run() {
 			continue
 		}
 		RemoteAddress := conn.RemoteAddr()
+		IPPort := strings.Split(RemoteAddress.String(), ":")
 		logrus.WithFields(logrus.Fields{
-			"Address": RemoteAddress.String(),
+			"IP":   IPPort[0],
+			"Port": IPPort[1],
 		}).Warn("Connection from")
 		go func() { RunProviderForConn(conn, sp.params) }()
 	}
