@@ -49,6 +49,17 @@ Both commands are part of the DICOM Toolkit - DCMTK
 
 - Also tested with Hooros (https://horosproject.org/) 
 
+# Docker
+## Build a Dicompot Docker Image from this repository
+1. `git clone https://github.com/nsmfoo/dicompot.git`
+
+2. `cd dicompot`
+
+3. `docker build -t dicompot:latest`
+
+## Run the container
+1. `docker run --rm -dtip 11112:11112 dicompot:latest`
+
 # Known Issues
 
 If the server instance, terminates with the message: "signal: killed", try increasing the amount of avalible memory and try again.
