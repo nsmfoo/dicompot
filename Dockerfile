@@ -6,4 +6,4 @@ COPY . /opt/go/dicompot
 RUN cd /opt/go/dicompot
 RUN go mod download
 RUN go install -a -x github.com/nsmfoo/dicompot/server
-CMD /opt/go/bin/dicompot
+CMD /opt/go/bin/server
