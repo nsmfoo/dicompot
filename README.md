@@ -58,7 +58,10 @@ Both commands are part of the DICOM Toolkit - DCMTK
 3. `docker build -t dicompot:latest .`
 
 ## Run the container
-1. `docker run --rm --name dicompot -dtip 11112:11112 dicompot:latest`
+* `docker run --rm --net=host --name=dicompot -dtip=11112:11112 dicompot:latest`
+
+## View logs 
+* `docker attach dicompot`
 
 # Known Issues
 
