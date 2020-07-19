@@ -55,7 +55,7 @@ Both commands are part of the DICOM Toolkit - DCMTK
 
 2. `cd dicompot`
 
-3. `docker build -t dicompot:latest`
+3. `docker build -t dicompot:latest .`
 
 ## Run the container
 1. `docker run --rm -dtip 11112:11112 dicompot:latest`
