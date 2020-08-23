@@ -49,6 +49,28 @@ Both commands are part of the DICOM Toolkit - DCMTK
 
 - Also tested with Hooros (https://horosproject.org/) 
 
+# Docker
+## Build a Dicompot Docker Image from this repository
+1. `git clone https://github.com/nsmfoo/dicompot.git`
+
+2. `cd dicompot`
+
+3. `docker build -t dicompot:latest .`
+
+## Run the container
+`docker run --rm --read-only --net="host" --name="dicompot" --detach --tty --interactive --publish=11112:11112 dicompot:latest`
+### Docker Engine command-line arguments explained
+* `--rm`: remove container after it stops
+* `--read-only`: mount container as read-only
+* `--net="host"`: set container network as `host`
+* `--name="dicompot"`: set container name as `dicompot`
+* `--detach`: run in the background *hint: use `docker attach dicompot` to re-attach STDIN/STDOUT back to the container*
+* `--tty`: allocate a pseudo-tty for the container
+* `--interactive`: make the container interactive
+
+## View logs 
+* `docker logs dicompot`
+
 # Known Issues
 
 If the server instance, terminates with the message: "signal: killed", try increasing the amount of avalible memory and try again.
