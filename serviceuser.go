@@ -94,7 +94,7 @@ func NewServiceUser(params ServiceUserParams) (*ServiceUser, error) {
 		return nil, err
 	}
 	mu := &sync.Mutex{}
-	label := newUID("user")
+	label := newUID()
 	su := &ServiceUser{
 		label:    label,
 		upcallCh: make(chan upcallEvent, 128),

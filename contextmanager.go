@@ -150,11 +150,14 @@ func (m *contextManager) onAssociateRequest(requestItems []pdu.SubItem) ([]pdu.S
 			}
 		}
 	}
+
 	responses = append(responses,
 		&pdu.UserInformationItem{
 			Items: []pdu.SubItem{&pdu.UserInformationMaximumLengthItem{MaximumLengthReceived: uint32(DefaultMaxPDUSize)}}})
+
 	logrus.WithFields(logrus.Fields{
 		"Version": m.peerImplementationVersionName,
+		"ID":      m.label,
 	}).Info("Client")
 	return responses, nil
 }

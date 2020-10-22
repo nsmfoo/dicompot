@@ -7,10 +7,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/grailbio/go-dicom/dicomio"
-	"github.com/sirupsen/logrus"
 )
 
 // PDU is the interface for DUL messages like A-ASSOCIATE-AC, P-DATA-TF.
@@ -586,13 +584,6 @@ func decodeAAssociate(d *dicomio.Decoder, pduType Type) *AAssociate {
 	d.Skip(2) // Reserved
 	pdu.CalledAETitle = d.ReadString(16)
 	pdu.CallingAETitle = d.ReadString(16)
-
-	logrus.WithFields(logrus.Fields{
-		"AETitle": strings.TrimSpace(pdu.CalledAETitle),
-	}).Info("Client")
-	logrus.WithFields(logrus.Fields{
-		"Identifier": strings.TrimSpace(pdu.CallingAETitle),
-	}).Info("Client")
 
 	d.Skip(8 * 4)
 	for !d.EOF() {

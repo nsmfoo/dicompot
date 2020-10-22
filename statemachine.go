@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/grailbio/go-dicom/dicomio"
 	"github.com/grailbio/go-dicom/dicomuid"
 	"github.com/nsmfoo/dicompot/dimse"
 	"github.com/nsmfoo/dicompot/pdu"
+	"github.com/sirupsen/logrus"
 )
 
 type stateType int
@@ -169,6 +171,7 @@ var actionAe2 = &stateAction{"AE-2", "Connection established on the user side. S
 			CallingAETitle:  sm.userParams.CallingAETitle,
 			Items:           items,
 		}
+
 		sendPDU(sm, pdu)
 		startTimer(sm)
 		return sta05
@@ -209,6 +212,7 @@ var actionAe5 = &stateAction{"AE-5", "Issue Transport connection response primit
 
 func extractPresentationContextItems(items []pdu.SubItem) []*pdu.PresentationContextItem {
 	var contextItems []*pdu.PresentationContextItem
+
 	for _, item := range items {
 		if n, ok := item.(*pdu.PresentationContextItem); ok {
 			contextItems = append(contextItems, n)
@@ -223,10 +227,40 @@ otherwise issue A-ASSOCIATE-RJ-PDU and start ARTIM timer`,
 	func(sm *stateMachine, event stateEvent) stateType {
 		stopTimer(sm)
 		v := event.pdu.(*pdu.AAssociate)
+
+		if sm.enforceStatus != "no" {
+			if strings.TrimSpace(v.CalledAETitle) != strings.TrimSpace(sm.clientAETitleStatus) {
+
+				logrus.WithFields(logrus.Fields{
+					"AETitle": strings.TrimSpace(v.CalledAETitle),
+					"ID":      sm.label,
+				}).Error("Connection")
+				// Sleep to prevent overload in case of an extended brutefoce attempt
+				time.Sleep(5 * time.Second)
+
+				rj := pdu.AAssociateRj{Result: 1, Source: 2, Reason: 2}
+				sendPDU(sm, &rj)
+				startTimer(sm)
+				return sta13
+			} else {
+
+				logrus.WithFields(logrus.Fields{
+					"AETitle": strings.TrimSpace(v.CalledAETitle),
+					"ID":      sm.label,
+				}).Info("Client")
+				logrus.WithFields(logrus.Fields{
+					"Identifier": strings.TrimSpace(v.CallingAETitle),
+					"ID":         sm.label,
+				}).Info("Client")
+			}
+		}
+
 		if v.ProtocolVersion != 0x0001 {
 			rj := pdu.AAssociateRj{Result: 1, Source: 2, Reason: 2}
+
 			sendPDU(sm, &rj)
 			startTimer(sm)
+
 			return sta13
 		}
 		responses, err := sm.contextManager.onAssociateRequest(v.Items)
@@ -258,11 +292,14 @@ otherwise issue A-ASSOCIATE-RJ-PDU and start ARTIM timer`,
 	}}
 var actionAe7 = &stateAction{"AE-7", "Send A-ASSOCIATE-AC PDU",
 	func(sm *stateMachine, event stateEvent) stateType {
+
 		sendPDU(sm, event.pdu.(*pdu.AAssociate))
+
 		sm.upcallCh <- upcallEvent{
 			eventType: upcallEventHandshakeCompleted,
 			cm:        sm.contextManager,
 		}
+
 		return sta06
 	}}
 
@@ -270,6 +307,7 @@ var actionAe8 = &stateAction{"AE-8", "Send A-ASSOCIATE-RJ PDU and start ARTIM ti
 	func(sm *stateMachine, event stateEvent) stateType {
 		sendPDU(sm, event.pdu.(*pdu.AAssociateRj))
 		startTimer(sm)
+
 		return sta13
 	}}
 
@@ -708,6 +746,9 @@ type stateMachine struct {
 	label  string // For logging only
 	isUser bool   // true if service user, false if provider
 
+	clientAETitleStatus string
+	enforceStatus       string
+
 	// userParams is set only for a client-side statemachine
 	userParams ServiceUserParams
 
@@ -801,6 +842,7 @@ func networkReaderThread(ch chan stateEvent, conn net.Conn, maxPDUSize int, smNa
 		doassert(v != nil)
 		switch n := v.(type) {
 		case *pdu.AAssociate:
+
 			if n.Type == pdu.TypeAAssociateRq {
 				ch <- stateEvent{event: evt06, pdu: n, err: nil}
 			} else {
@@ -875,6 +917,7 @@ func findAction(currentState stateType, event *stateEvent, smName string) *state
 func runOneStep(sm *stateMachine) {
 	event := getNextEvent(sm)
 	action := findAction(sm.currentState, &event, sm.label)
+
 	if action == nil {
 		action = actionAa2 // This will force connection abortion
 	}
@@ -900,6 +943,7 @@ func runStateMachineForServiceUser(
 		downcallCh:     downcallCh,
 		upcallCh:       upcallCh,
 	}
+
 	event := stateEvent{event: evt01}
 	action := findAction(sta01, &event, sm.label)
 	sm.currentState = action.Callback(sm, event)
@@ -912,20 +956,27 @@ func runStateMachineForServiceProvider(
 	conn net.Conn,
 	upcallCh chan upcallEvent,
 	downcallCh chan stateEvent,
-	label string) {
+	label string,
+	clientAETitle string,
+	enforce string,
+) {
 	sm := &stateMachine{
-		label:          label,
-		isUser:         false,
-		contextManager: newContextManager(label),
-		conn:           conn,
-		netCh:          make(chan stateEvent, 128),
-		errorCh:        make(chan stateEvent, 128),
-		downcallCh:     downcallCh,
-		upcallCh:       upcallCh,
+		clientAETitleStatus: clientAETitle,
+		enforceStatus:       enforce,
+		label:               label,
+		isUser:              false,
+		contextManager:      newContextManager(label),
+		conn:                conn,
+		netCh:               make(chan stateEvent, 128),
+		errorCh:             make(chan stateEvent, 128),
+		downcallCh:          downcallCh,
+		upcallCh:            upcallCh,
 	}
+
 	event := stateEvent{event: evt05, conn: conn}
 	action := findAction(sta01, &event, sm.label)
 	sm.currentState = action.Callback(sm, event)
+
 	for sm.currentState != sta01 {
 		runOneStep(sm)
 	}

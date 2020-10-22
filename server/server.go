@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -21,6 +20,7 @@ import (
 var (
 	portFlag = flag.String("port", "11112", "TCP port to listen to")
 	ipFlag   = flag.String("ip", "127.0.0.1", "IP address to listen to")
+	enFlag   = flag.String("enforce", "no", "Enforce AE title check")
 	aeFlag   = flag.String("ae", "radiant", "AE title of this server")
 	dirFlag  = flag.String("dir", ".", "Picture directory")
 	logFlag  = flag.String("log", "dicompot.log", "logfile")
@@ -68,11 +68,12 @@ type filterMatch struct {
 // "filters" are matching conditions specified in C-{FIND,GET,MOVE}. This
 // function returns the list of datasets and their elements that match filters.
 func (ss *server) findMatchingFiles(filters []*dicom.Element) ([]filterMatch, error) {
+
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
 	var matches []filterMatch
-	sum := 0
+	//	sum := 0
 	for path, ds := range ss.datasets {
 		allMatched := true
 		match := filterMatch{path: path}
@@ -82,17 +83,6 @@ func (ss *server) findMatchingFiles(filters []*dicom.Element) ([]filterMatch, er
 				return matches, err
 			}
 			if !ok {
-				s := strings.Split(filter.String(), " ")
-				re := regexp.MustCompile(`\[(.*)\]`)
-				matche1 := re.FindStringSubmatch(s[1])
-				matche2 := re.FindStringSubmatch(s[4])
-				if sum < 1 {
-					logrus.WithFields(logrus.Fields{
-						"Type": matche1[1],
-						"Term": matche2[1],
-					}).Info("C-FIND Search")
-					sum++
-				}
 				allMatched = false
 				break
 			}
@@ -114,6 +104,7 @@ func (ss *server) findMatchingFiles(filters []*dicom.Element) ([]filterMatch, er
 			matches = append(matches, match)
 		}
 	}
+
 	return matches, nil
 }
 
@@ -121,14 +112,16 @@ func (ss *server) onCFind(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
+	sessionID string,
 	ch chan dicompot.CFindResult) {
-	logrus.WithFields(logrus.Fields{
-		"Command": "C-FIND",
-	}).Info("Received")
+
 	matches, err := ss.findMatchingFiles(filters)
+
 	logrus.WithFields(logrus.Fields{
 		"Matches": len(matches),
+		"ID":      sessionID,
 	}).Warn("C-FIND Search result")
+
 	if err != nil {
 		ch <- dicompot.CFindResult{Err: err}
 	} else {
@@ -143,11 +136,16 @@ func (ss *server) onCMoveOrCGet(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
+	sessionID string,
 	ch chan dicompot.CMoveResult) {
-	logrus.WithFields(logrus.Fields{
-		"Command": "C-MOVE",
-	}).Info("Received")
+
 	matches, err := ss.findMatchingFiles(filters)
+
+	logrus.WithFields(logrus.Fields{
+		"Matches": len(matches),
+		"ID":      sessionID,
+	}).Warn("C-FIND Search result")
+
 	if err != nil {
 		ch <- dicompot.CMoveResult{Err: err}
 	} else {
@@ -234,6 +232,7 @@ func canonicalizeHostIp(IpAdr string) string {
 }
 
 func main() {
+
 	flag.Parse()
 	logInit()
 	port := canonicalizeHostPort(*portFlag)
@@ -249,8 +248,8 @@ func main() {
 		██████╔╝██║╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ╚██████╔╝   ██║   
 		╚═════╝ ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝      ╚═════╝    ╚═╝  
 		@nsmfoo - Mikael Keri
-																	 
 	`)
+
 	log.Printf("-| Loaded %d images", len(datasets))
 	ss := server{
 		mu:       &sync.Mutex{},
@@ -260,24 +259,22 @@ func main() {
 
 	params := dicompot.ServiceProviderParams{
 		AETitle: *aeFlag,
-		CEcho: func(connState dicompot.ConnectionState) dimse.Status {
-			logrus.WithFields(logrus.Fields{
-				"Command": "C-ECHO",
-			}).Info("Received")
+		Enforce: *enFlag,
 
+		CEcho: func(connState dicompot.ConnectionState) dimse.Status {
 			return dimse.Success
 		},
 		CFind: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan dicompot.CFindResult) {
-			ss.onCFind(transferSyntaxUID, sopClassUID, filter, ch)
+			filter []*dicom.Element, sessionID string, ch chan dicompot.CFindResult) {
+			ss.onCFind(transferSyntaxUID, sopClassUID, filter, sessionID, ch)
 		},
 		CMove: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan dicompot.CMoveResult) {
-			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, ch)
+			filter []*dicom.Element, sessionID string, ch chan dicompot.CMoveResult) {
+			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, sessionID, ch)
 		},
 		CGet: func(connState dicompot.ConnectionState, transferSyntaxUID string, sopClassUID string,
-			filter []*dicom.Element, ch chan dicompot.CMoveResult) {
-			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, ch)
+			filter []*dicom.Element, sessionID string, ch chan dicompot.CMoveResult) {
+			ss.onCMoveOrCGet(transferSyntaxUID, sopClassUID, filter, sessionID, ch)
 		},
 	}
 
@@ -285,8 +282,10 @@ func main() {
 	log.Printf("-| Attacker log: %s", *logFlag)
 
 	sp, err := dicompot.NewServiceProvider(params, hostAddress)
+
 	if err != nil {
 		panic(err)
 	}
+
 	sp.Run()
 }

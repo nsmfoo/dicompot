@@ -7,7 +7,7 @@ This project is built up on the great work done by GRAIL (https://github.com/gra
 # About
 
 - Dicompot is a fully functional DICOM server with a twist. 
-- Please note: C-STORE attempts are blocked for your "protection" but logged. 
+- Please note: C-STORE attempts are blocked for your "protection", but logged. 
 
 # Install
 (Ubuntu 20.04 LTS)
@@ -20,17 +20,16 @@ This project is built up on the great work done by GRAIL (https://github.com/gra
 - go install -a -x github.com/nsmfoo/dicompot/server/
 
 (Alpine)
-```
-apk -U add go build-base g++ git
-mkdir -p /opt/go
-export GOPATH=/opt/go/
-cd /opt/go/
-git clone https://github.com/nsmfoo/dicompot.git
-cd dicompot
-go mod download
-go install -a -x github.com/nsmfoo/dicompot/server
-```
-Binary (`server`) located in `/opt/go/bin`.
+
+- apk -U add go build-base g++ git
+- mkdir -p /opt/go
+- export GOPATH=/opt/go/
+- cd /opt/go/
+- git clone https://github.com/nsmfoo/dicompot.git
+- cd dicompot
+- go mod download
+- go install -a -x github.com/nsmfoo/dicompot/server
+- Binary (`server`) located in `/opt/go/bin`.
 
 # Run
 
@@ -47,7 +46,7 @@ Binary (`server`) located in `/opt/go/bin`.
 
 Both commands are part of the DICOM Toolkit - DCMTK
 
-- Also tested with Hooros (https://horosproject.org/) 
+- Also tested with Horos (https://horosproject.org/) 
 
 # Docker
 ## Build a Dicompot Docker Image from this repository
@@ -78,7 +77,7 @@ If the server instance, terminates with the message: "signal: killed", try incre
 
 # ToDo
 
-- Enforce AET (So people can brute force away)
+- ~~Enforce AET (So people can brute force away)~~
 - Auto generate meta data in DICOM files (for use in dicompot)
 - Block certain IP's (Geo based, amount of connections etc)
 - Code cleanup

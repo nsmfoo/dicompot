@@ -4,6 +4,7 @@ package dicompot
 
 import (
 	"net"
+	"regexp"
 	"strings"
 
 	dicom "github.com/grailbio/go-dicom"
@@ -43,8 +44,10 @@ func handleCStore(
 		Status:                    status,
 	}
 	cs.sendMessage(resp, nil)
+
 	logrus.WithFields(logrus.Fields{
 		"Type": "We don't like that",
+		"ID":   cs.disp.label,
 	}).Error("C-STORE received")
 }
 
@@ -53,6 +56,7 @@ func handleCFind(
 	connState ConnectionState,
 	c *dimse.CFindRq, data []byte,
 	cs *serviceCommandState) {
+
 	if params.CFind == nil {
 		cs.sendMessage(&dimse.CFindRsp{
 			AffectedSOPClassUID:       c.AffectedSOPClassUID,
@@ -75,8 +79,11 @@ func handleCFind(
 
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	responseCh := make(chan CFindResult, 128)
+	var sessionID string
+	sessionID = cs.cm.label
+
 	go func() {
-		params.CFind(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CFind(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
 	}()
 	for resp := range responseCh {
 		if resp.Err != nil {
@@ -87,6 +94,7 @@ func handleCFind(
 			break
 		}
 		payload, err := writeElementsToBytes(resp.Elements, cs.context.transferSyntaxUID)
+
 		if err != nil {
 			status = dimse.Status{
 				Status:       dimse.CFindUnableToProcess,
@@ -94,6 +102,7 @@ func handleCFind(
 			}
 			break
 		}
+
 		cs.sendMessage(&dimse.CFindRsp{
 			AffectedSOPClassUID:       c.AffectedSOPClassUID,
 			MessageIDBeingRespondedTo: c.MessageID,
@@ -101,6 +110,12 @@ func handleCFind(
 			Status:                    dimse.Status{Status: dimse.StatusPending},
 		}, payload)
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"Command": "C-FIND",
+		"ID":      cs.cm.label,
+	}).Info("Received")
+
 	cs.sendMessage(&dimse.CFindRsp{
 		AffectedSOPClassUID:       c.AffectedSOPClassUID,
 		MessageIDBeingRespondedTo: c.MessageID,
@@ -116,6 +131,12 @@ func handleCMove(
 	connState ConnectionState,
 	c *dimse.CMoveRq, data []byte,
 	cs *serviceCommandState) {
+
+	logrus.WithFields(logrus.Fields{
+		"Command": "C-MOVE",
+		"ID":      cs.cm.label,
+	}).Info("Received")
+
 	sendError := func(err error) {
 		cs.sendMessage(&dimse.CMoveRsp{
 			AffectedSOPClassUID:       c.AffectedSOPClassUID,
@@ -138,9 +159,11 @@ func handleCMove(
 		sendError(err)
 		return
 	}
+	var sessionID string
+	sessionID = cs.cm.label
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
-		params.CMove(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CMove(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
 	}()
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	var numSuccesses, numFailures uint16
@@ -178,6 +201,7 @@ func handleCMove(
 func handleCGet(
 	params ServiceProviderParams,
 	connState ConnectionState,
+
 	c *dimse.CGetRq, data []byte, cs *serviceCommandState) {
 	sendError := func(err error) {
 		cs.sendMessage(&dimse.CGetRsp{
@@ -187,6 +211,7 @@ func handleCGet(
 			Status:                    dimse.Status{Status: dimse.StatusUnrecognizedOperation, ErrorComment: err.Error()},
 		}, nil)
 	}
+
 	if params.CGet == nil {
 		cs.sendMessage(&dimse.CGetRsp{
 			AffectedSOPClassUID:       c.AffectedSOPClassUID,
@@ -201,9 +226,12 @@ func handleCGet(
 		sendError(err)
 		return
 	}
+
+	var sessionID string
+	sessionID = cs.cm.label
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
-		params.CGet(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CGet(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
 	}()
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	var numSuccesses, numFailures uint16
@@ -252,6 +280,7 @@ func handleCGet(
 	logrus.WithFields(logrus.Fields{
 		"Command": "C-GET",
 		"Files":   numSuccesses,
+		"ID":      cs.cm.label,
 	}).Info("Received")
 
 	// Drain the responses in case of errors
@@ -265,6 +294,7 @@ func handleCEcho(
 	c *dimse.CEchoRq, data []byte,
 	cs *serviceCommandState) {
 	status := dimse.Status{Status: dimse.StatusUnrecognizedOperation}
+
 	if params.CEcho != nil {
 		status = params.CEcho(connState)
 	}
@@ -274,6 +304,11 @@ func handleCEcho(
 		Status:                    status,
 	}
 
+	logrus.WithFields(logrus.Fields{
+		"Command": "C-ECHO",
+		"ID":      cs.cm.label,
+	}).Info("Received")
+
 	cs.sendMessage(resp, nil)
 }
 
@@ -281,6 +316,9 @@ func handleCEcho(
 type ServiceProviderParams struct {
 	// The application-entity title of the server. Must be nonempty
 	AETitle string
+
+	// Enforce AETitle, default accept any
+	Enforce string
 
 	// Names of remote AEs and their host:ports. Used only by C-MOVE. This
 	// map should be nonempty iff the server supports CMove.
@@ -322,6 +360,7 @@ type CFindCallback func(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
+	sessionID string,
 	ch chan CFindResult)
 
 // CMoveCallback implements C-MOVE or C-GET handle
@@ -330,6 +369,7 @@ type CMoveCallback func(
 	transferSyntaxUID string,
 	sopClassUID string,
 	filters []*dicom.Element,
+	sessionID string,
 	ch chan CMoveResult)
 
 // ConnectionState informs session state to callbacks.
@@ -366,6 +406,23 @@ func readElementsInBytes(data []byte, transferSyntaxUID string) ([]*dicom.Elemen
 		if decoder.Error() != nil {
 			break
 		}
+
+		re := regexp.MustCompile(`\[([^\[\]]*)\]`)
+		searchTerm := re.FindAllString(elem.String(), -1)
+
+		searchTerm[0] = strings.Trim(searchTerm[0], "[")
+		searchTerm[0] = strings.Trim(searchTerm[0], "]")
+		searchTerm[1] = strings.Trim(searchTerm[1], "[")
+		searchTerm[1] = strings.Trim(searchTerm[1], "]")
+
+		if searchTerm[1] != "" && searchTerm[1] != "ISO_IR 100" && searchTerm[1] != "STUDY" {
+			logrus.WithFields(logrus.Fields{
+				"Type": searchTerm[0],
+				"Term": searchTerm[1],
+				"ID":   attackID,
+			}).Info("C-FIND Search")
+		}
+
 		elems = append(elems, elem)
 	}
 	if decoder.Error() != nil {
@@ -389,11 +446,12 @@ func elementsString(elems []*dicom.Element) string {
 func NewServiceProvider(params ServiceProviderParams, port string) (*ServiceProvider, error) {
 	sp := &ServiceProvider{
 		params: params,
-		label:  newUID("sp"),
+		label:  newUID(),
 	}
 
 	var err error
 	sp.listener, err = net.Listen("tcp", port)
+
 	if err != nil {
 		return nil, err
 	}
@@ -404,12 +462,28 @@ func getConnState(conn net.Conn) (cs ConnectionState) {
 	return
 }
 
+var attackID string
+
 // RunProviderForConn starts threads for running a DICOM server on "conn".
 func RunProviderForConn(conn net.Conn, params ServiceProviderParams) {
 
+	var clientAETitle = params.AETitle
+	var enforce = params.Enforce
+
 	upcallCh := make(chan upcallEvent, 128)
-	label := newUID("sc")
+
+	label := newUID()
 	disp := newServiceDispatcher(label)
+
+	attackID = label
+
+	RemoteAddress := conn.RemoteAddr()
+	IPPort := strings.Split(RemoteAddress.String(), ":")
+	logrus.WithFields(logrus.Fields{
+		"IP":   IPPort[0],
+		"Port": IPPort[1],
+		"ID":   label,
+	}).Warn("Connection from")
 
 	disp.registerCallback(dimse.CommandFieldCStoreRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
@@ -419,6 +493,7 @@ func RunProviderForConn(conn net.Conn, params ServiceProviderParams) {
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
 			handleCFind(params, getConnState(conn), msg.(*dimse.CFindRq), data, cs)
 		})
+
 	disp.registerCallback(dimse.CommandFieldCMoveRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
 			handleCMove(params, getConnState(conn), msg.(*dimse.CMoveRq), data, cs)
@@ -431,32 +506,31 @@ func RunProviderForConn(conn net.Conn, params ServiceProviderParams) {
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
 			handleCEcho(params, getConnState(conn), msg.(*dimse.CEchoRq), data, cs)
 		})
-	go runStateMachineForServiceProvider(conn, upcallCh, disp.downcallCh, label)
+	go runStateMachineForServiceProvider(conn, upcallCh, disp.downcallCh, label, clientAETitle, enforce)
+
 	for event := range upcallCh {
 		disp.handleEvent(event)
 	}
 
 	logrus.WithFields(logrus.Fields{
 		"Status": "Finished",
+		"ID":     label,
 	}).Warn("Connection")
-
 	disp.close()
 }
 
 // Run listens to incoming connections,
 func (sp *ServiceProvider) Run() {
+
 	for {
 		conn, err := sp.listener.Accept()
 		if err != nil {
 			continue
 		}
-		RemoteAddress := conn.RemoteAddr()
-		IPPort := strings.Split(RemoteAddress.String(), ":")
-		logrus.WithFields(logrus.Fields{
-			"IP":   IPPort[0],
-			"Port": IPPort[1],
-		}).Warn("Connection from")
-		go func() { RunProviderForConn(conn, sp.params) }()
+		go func() {
+
+			RunProviderForConn(conn, sp.params)
+		}()
 	}
 }
 

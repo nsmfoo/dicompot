@@ -3,12 +3,15 @@ package dicompot
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 )
 
-var idSeq int32 = 32 // for generating unique ID
+var idSeq int64
 
-func newUID(prefix string) string {
-	return fmt.Sprintf("%s-%d", prefix, atomic.AddInt32(&idSeq, 1))
+func newUID() string {
+	now := time.Now()
+	idSeq = now.UnixNano()
+	return fmt.Sprintf("%d", atomic.AddInt64(&idSeq, 1))
 }
 
 func doassert(cond bool, values ...interface{}) {
