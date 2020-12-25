@@ -735,7 +735,7 @@ func (pdu *PDataTf) WritePayload(e *dicomio.Encoder) {
 
 func (pdu *PDataTf) String() string {
 	buf := bytes.Buffer{}
-	buf.WriteString(fmt.Sprintf("P_DATA_TF{items: ["))
+	buf.WriteString("P_DATA_TF{items: [")
 	for i, item := range pdu.Items {
 		if i > 0 {
 			buf.WriteString("\n")

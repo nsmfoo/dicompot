@@ -210,17 +210,6 @@ var actionAe5 = &stateAction{"AE-5", "Issue Transport connection response primit
 		return sta02
 	}}
 
-func extractPresentationContextItems(items []pdu.SubItem) []*pdu.PresentationContextItem {
-	var contextItems []*pdu.PresentationContextItem
-
-	for _, item := range items {
-		if n, ok := item.(*pdu.PresentationContextItem); ok {
-			contextItems = append(contextItems, n)
-		}
-	}
-	return contextItems
-}
-
 var actionAe6 = &stateAction{"AE-6", `Stop ARTIM timer and if A-ASSOCIATE-RQ acceptable by "
 service-dul: issue A-ASSOCIATE indication primitive
 otherwise issue A-ASSOCIATE-RJ-PDU and start ARTIM timer`,

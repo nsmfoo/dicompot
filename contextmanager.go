@@ -102,9 +102,6 @@ func (m *contextManager) onAssociateRequest(requestItems []pdu.SubItem) ([]pdu.S
 	}
 	for _, requestItem := range requestItems {
 		switch ri := requestItem.(type) {
-		case *pdu.ApplicationContextItem:
-			if ri.Name != pdu.DICOMApplicationContextItemName {
-			}
 		case *pdu.PresentationContextItem:
 			var sopUID string
 			var pickedTransferSyntaxUID string
@@ -187,7 +184,6 @@ func (m *contextManager) onAssociateResponse(responses []pdu.SubItem) error {
 					ri.ContextID,
 					ri.String())
 			}
-			found := false
 			var sopUID string
 			for _, subItem := range request.Items {
 				switch c := subItem.(type) {
@@ -195,17 +191,12 @@ func (m *contextManager) onAssociateResponse(responses []pdu.SubItem) error {
 					sopUID = c.Name
 				case *pdu.TransferSyntaxSubItem:
 					if c.Name == pickedTransferSyntaxUID {
-						found = true
 						break
 					}
 				}
 			}
 			if sopUID == "" {
 				return fmt.Errorf("dicom.onAssociateResponse(%s): The A-ASSOCIATE request lacks the abstract syntax item for tag %v (this shouldn't happen)", m.label, ri.ContextID)
-			}
-			if ri.Result != pdu.PresentationContextAccepted {
-			}
-			if !found {
 			}
 			addContextMapping(m, sopUID, pickedTransferSyntaxUID, ri.ContextID, ri.Result)
 		case *pdu.UserInformationItem:
@@ -233,7 +224,7 @@ func addContextMapping(
 	contextID byte,
 	result pdu.PresentationContextResult) {
 
-	doassert(result >= 0 && result <= 4, result)
+	doassert(result <= 4, result)
 	doassert(contextID%2 == 1, contextID)
 	if result == 0 {
 		doassert(abstractSyntaxUID != "", abstractSyntaxUID)
