@@ -79,8 +79,7 @@ func handleCFind(
 
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	responseCh := make(chan CFindResult, 128)
-	var sessionID string
-	sessionID = cs.cm.label
+	var sessionID string = cs.cm.label
 
 	go func() {
 		params.CFind(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
@@ -159,8 +158,7 @@ func handleCMove(
 		sendError(err)
 		return
 	}
-	var sessionID string
-	sessionID = cs.cm.label
+	var sessionID string = cs.cm.label
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
 		params.CMove(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
@@ -227,8 +225,7 @@ func handleCGet(
 		return
 	}
 
-	var sessionID string
-	sessionID = cs.cm.label
+	var sessionID string = cs.cm.label
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
 		params.CGet(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, sessionID, responseCh)
@@ -429,17 +426,6 @@ func readElementsInBytes(data []byte, transferSyntaxUID string) ([]*dicom.Elemen
 		return nil, decoder.Error()
 	}
 	return elems, nil
-}
-
-func elementsString(elems []*dicom.Element) string {
-	s := "["
-	for i, elem := range elems {
-		if i > 0 {
-			s += ", "
-		}
-		s += elem.String()
-	}
-	return s + "]"
 }
 
 // NewServiceProvider creates a new DICOM server object.
