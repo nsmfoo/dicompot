@@ -10,32 +10,24 @@ This project is built up on the great work done by GRAIL (https://github.com/gra
 - Please note: C-STORE attempts are blocked for your "protection", but logged. 
 
 # Install
-(Ubuntu 20.04 LTS)
+(Ubuntu 22.04 LTS)
 
 - sudo apt install golang
-- mkdir $HOME/go 
-- cd $HOME/go
-- go get github.com/nsmfoo/dicompot
-- go get -d ./...
-- go install -a -x github.com/nsmfoo/dicompot/server/
-
-(Alpine)
-
-- apk -U add go build-base g++ git
-- mkdir -p /opt/go
-- export GOPATH=/opt/go/
-- cd /opt/go/
 - git clone https://github.com/nsmfoo/dicompot.git
 - cd dicompot
-- go mod download
-- go install -a -x github.com/nsmfoo/dicompot/server
-- Binary (`server`) located in `/opt/go/bin`.
+- go install server/dicompot.go
+
+(macos 13.5+)
+- brew install golang
+- git clone https://github.com/nsmfoo/dicompot.git
+- cd dicompot
+- go install server/dicompot.go
 
 # Run
 
 - cd $HOME/go/bin
-- ./server 
-- ./server -help, for the different options that is avalible
+- ./dicompot 
+- ./dicompot -help, for the different options that is available
 - The server will log to the console and also to a file called dicompot.log (JSON)
 - Works well with screen, if you like to run it in the background
 
@@ -85,4 +77,4 @@ If the server instance, terminates with the message: "signal: killed", try incre
 
 # Note
 
-I'm in no way a DICOM expert, if you find something strange... it probably is. Also this is the first GO code I ever touched, so in the same way, if something looks strange, it probably is. That being said, any help, suggestions are more than welcome. 
+I'm in no way a DICOM expert. If you find something strange... it probably is. This is also the first GO code I ever touched, so in the same way, if something looks strange it probably is. That being said any help and/or suggestions are more than welcome. 
