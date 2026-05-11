@@ -1,6 +1,6 @@
 module github.com/nsmfoo/dicompot
 
-go 1.18
+go 1.26.2
 
 require (
 	github.com/grailbio/go-dicom v0.0.0-20190117035129-c30d9eaca591
@@ -12,7 +12,6 @@ require (
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/gobwas/glob v0.0.0-20170212200151-51eb1ee00b6d // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
